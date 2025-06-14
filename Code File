@@ -1,0 +1,53 @@
+#include <p18f452.inc>
+    
+    CONFIG OSC = HS         ; High-Speed Oscillator (20 MHz crystal)
+    CONFIG BOR = OFF        ; Brown-Out Reset voltage set to 4.5V
+    CONFIG PWRT = ON        ; Power-Up Timer enabled
+    CONFIG WDT = OFF        ; Watchdog Timer disabled
+    CONFIG LVP = OFF        ; Low-Voltage Programming disabled
+    
+    ORG 0H
+    GOTO MAIN
+    
+    ORG 8H
+    BTFSC INTCON,INT0IF
+    CALL LED1_ISR
+    GOTO HERE
+    
+    ORG 50H
+MAIN BSF TRISB,0
+    BCF TRISB,5
+    BCF TRISD,0
+    BSF PORTB,5
+    BCF PORTD,0
+    BSF INTCON,INT0IE
+    BSF INTCON,GIE
+HERE BRA HERE
+    
+    ORG 150H
+LED1_ISR
+    BCF INTCON,INT0IF
+    BTG PORTB,5
+    BTG PORTD,0
+    BSF INTCON,GIE
+    BTFSS PORTB,5
+    CALL TIMER
+    RETURN
+    
+    ORG 200H
+TIMER BCF INTCON,TMR0IF
+    MOVLW 0X07 
+    MOVWF T0CON
+    MOVLW 0H
+    MOVWF TMR0H
+    MOVLW 0H
+    MOVWF TMR0L
+    BSF T0CON,TMR0ON
+AGAIN BTFSS INTCON,TMR0IF
+    BRA AGAIN
+    BTG PORTB,5
+    BTG PORTD,0
+    BTG T0CON,TMR0ON
+    BCF INTCON,TMR0IF
+    RETURN
+    END
